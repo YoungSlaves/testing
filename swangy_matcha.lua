@@ -298,7 +298,9 @@ local COL = {
     palDown  = Color3.fromRGB(255, 140, 26),
 }
 
-local FONT   = Drawing.Fonts.SystemBold or Drawing.Fonts.System
+-- Matcha builds differ here; indexing a missing Drawing.Fonts is a
+-- chunk-level error that kills the script before any pcall can catch it
+local FONT   = (Drawing.Fonts and (Drawing.Fonts.SystemBold or Drawing.Fonts.System)) or nil
 local EDGES  = {
     {1,2},{2,4},{4,3},{3,1},
     {5,6},{6,8},{8,7},{7,5},
@@ -4876,13 +4878,13 @@ HUD.ensure = function()
         HUD.title = HUD.obj("Text", 48)
         HUD.title.Text = "HUD"
         HUD.title.Size = 14
-        HUD.title.Font = FONT
+        pcall(function() HUD.title.Font = FONT end)
         HUD.title.Outline = false
         HUD.title.Transparency = 1
         HUD.close = HUD.obj("Text", 49)
         HUD.close.Text = "x"
         HUD.close.Size = 14
-        HUD.close.Font = FONT
+        pcall(function() HUD.close.Font = FONT end)
         HUD.close.Outline = false
         HUD.close.Transparency = 1
     end)
@@ -5213,7 +5215,7 @@ local function kbwEnsure()
         kbw.title = kbwNew("Text", 58)
         kbw.title.Text = "Keybinds"
         kbw.title.Size = 14
-        kbw.title.Font = FONT
+        pcall(function() kbw.title.Font = FONT end)
         kbw.title.Outline = false
         kbw.title.Transparency = 1
     end)
@@ -8543,7 +8545,7 @@ local function uiRangeSlider(group, spec)
         lo = spec.DefaultLo or 0, hi = spec.DefaultHi or 100,
         suffix = spec.Suffix or "", callback = spec.Callback, drag = nil,
     }
-    local font = Drawing.Fonts.SystemBold or Drawing.Fonts.System
+    local font = (Drawing.Fonts and (Drawing.Fonts.SystemBold or Drawing.Fonts.System)) or nil
 
     local function register(o)
         table.insert(UI.__all, o)
@@ -8694,7 +8696,11 @@ local function buildUI()
     local src = assert(uiSource("Library.lua"), "Swangy Library.lua not found")
     local chunk = assert(loadstring(src), "Swangy compile failed")
     local ran, runErr = pcall(chunk)
-    if not ran then error("Swangy load: " .. tostring(runErr)) end
+    -- Matcha: error() prints a red line without raising, so return instead
+    if not ran then
+        pcall(print, "[swangy] ui library failed to run: " .. tostring(runErr))
+        return
+    end
     UI = _G.Swangy
     assert(UI and UI.CreateWindow, "Swangy did not expose _G.Swangy")
 
